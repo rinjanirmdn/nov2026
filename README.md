@@ -85,6 +85,7 @@ npm run dev              # buka http://localhost:3000
 | `npm run dev` | server development |
 | `npm test` | tes logika keuangan, tanggal, dan impor |
 | `npm run lint` | ESLint |
+| `npm run typecheck` | cek tipe TypeScript |
 | `npm run build` | build produksi (sekalian `prisma generate`) |
 | `npm run db:sql` | buat ulang `database/schema.sql` dari migrasi |
 | `npx prisma studio` | lihat isi database di browser |
