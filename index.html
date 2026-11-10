@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f766e">
+  <title>Keuangan Berdua</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <h1>Keuangan Berdua</h1>
+    <div class="month">
+      <button type="button" data-action="month-prev" aria-label="Bulan sebelumnya">&lsaquo;</button>
+      <input type="month" id="month" aria-label="Pilih bulan">
+      <button type="button" data-action="month-next" aria-label="Bulan berikutnya">&rsaquo;</button>
+    </div>
+  </header>
+
+  <main id="view"></main>
+
+  <nav class="tabs" aria-label="Menu utama">
+    <button type="button" data-tab="ringkasan">Ringkasan</button>
+    <button type="button" data-tab="transaksi">Transaksi</button>
+    <button type="button" data-tab="hutang">Hutang</button>
+    <button type="button" data-tab="pengaturan">Pengaturan</button>
+  </nav>
+
+  <dialog id="dialog">
+    <form id="form" method="dialog">
+      <h2 id="form-title"></h2>
+      <div id="form-fields"></div>
+      <p id="form-error" class="error" hidden></p>
+      <div class="form-actions">
+        <button type="button" data-action="close-form" class="ghost">Batal</button>
+        <button type="submit" class="primary">Simpan</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
