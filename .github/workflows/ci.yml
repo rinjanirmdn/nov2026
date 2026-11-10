@@ -1,0 +1,117 @@
+# CI/CD Keuangan Berdua
+#
+# Setiap push ke branch mana pun (dan setiap pull request):
+#   1. check  : lint, typecheck, tes, migrasi ke PostgreSQL sungguhan, cek database/*.sql, build produksi.
+#   2. pages  : (hanya branch utama) terbitkan folder legacy/ ke GitHub Pages
+#               -> https://rinjanirmdn.github.io/nov2026/ selalu sama dengan isi repo terbaru.
+#
+# Aplikasi Next.js (versi baru) butuh server Node.js + database, jadi tidak bisa di GitHub Pages.
+# Saat sudah memilih hosting (mis. Vercel/Railway/VPS), tambahkan job deploy di bawah job `check`.
+
+name: CI/CD
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch: # tombol "Run workflow" di tab Actions
+
+# Push baru membatalkan run lama di branch yang sama.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Lint, tes, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: keuangan
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/keuangan?schema=public
+      SESSION_SECRET: ci-only-secret-not-used-anywhere-else-0123456789
+      PGPASSWORD: ci
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install (sekalian prisma generate)
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Tes
+        run: npm test
+
+      - name: Migrasi database
+        run: npx prisma migrate deploy
+
+      - name: Skema database sama dengan schema.prisma
+        run: npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
+
+      - name: database/schema.sql sudah diperbarui (npm run db:sql)
+        run: |
+          npm run db:sql
+          git diff --exit-code database/schema.sql || {
+            echo "::error file=database/schema.sql::schema.sql tidak sama dengan prisma/migrations. Jalankan 'npm run db:sql' lalu commit."
+            exit 1
+          }
+
+      - name: database/*.sql bisa diimpor (seperti di DBeaver)
+        run: |
+          psql -h localhost -U ci -d keuangan -v ON_ERROR_STOP=1 -q -c "CREATE DATABASE impor"
+          for f in schema.sql contoh-data.sql laporan.sql; do
+            echo "== $f"
+            psql -h localhost -U ci -d impor -v ON_ERROR_STOP=1 -q -f "database/$f" > /dev/null
+          done
+
+      - name: Build produksi
+        run: npm run build
+
+  pages:
+    name: Terbitkan GitHub Pages
+    needs: check
+    # Branch yang diterbitkan ke GitHub Pages. Ganti kalau nanti memakai `main`.
+    if: github.event_name != 'pull_request' && github.ref_name == 'claude/stoic-lamport-ebjphk'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: legacy
+      - id: deploy
+        uses: actions/deploy-pages@v5

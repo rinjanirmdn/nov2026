@@ -1,0 +1,150 @@
+@import "tailwindcss";
+
+/* Tampilan diporting dari versi lama (style.css), termasuk mode gelap otomatis. */
+:root {
+  --bg: #f4f6f5;
+  --card: #ffffff;
+  --text: #17201e;
+  --muted: #5d6b68;
+  --line: #dde3e1;
+  --accent: #0f766e;
+  --accent-text: #ffffff;
+  --good: #15803d;
+  --bad: #b91c1c;
+  --warn: #b45309;
+  --track: #e6ebe9;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #101514;
+    --card: #1a2120;
+    --text: #e8eeec;
+    --muted: #9aa8a5;
+    --line: #2b3533;
+    --accent: #2dd4bf;
+    --accent-text: #06201d;
+    --good: #4ade80;
+    --bad: #f87171;
+    --warn: #fbbf24;
+    --track: #2b3533;
+    color-scheme: dark;
+  }
+}
+
+@layer base {
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  h1 { font-size: 18px; font-weight: 700; margin: 0; }
+  h2 { font-size: 16px; font-weight: 700; margin: 0 0 10px; }
+  p { margin: 0 0 8px; }
+  a { color: var(--accent); }
+  button, .btn {
+    display: inline-block;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    text-decoration: none;
+    line-height: 1.3;
+  }
+  button:disabled { opacity: .6; cursor: progress; }
+  label { display: block; font-size: 14px; color: var(--muted); margin-bottom: 10px; }
+  label input:not([type="radio"]):not([type="checkbox"]), label select, .field {
+    display: block; width: 100%; margin-top: 4px; padding: 9px 10px;
+    border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text);
+  }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+}
+
+@layer components {
+  .app { padding-bottom: calc(72px + env(safe-area-inset-bottom)); min-height: 100dvh; }
+  .top {
+    position: sticky; top: 0; z-index: 2;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 10px 16px;
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+  }
+  .month { display: flex; align-items: center; gap: 4px; }
+  .month button { width: 34px; height: 34px; padding: 0; }
+  .month input { height: 34px; padding: 0 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+
+  main { max-width: 720px; margin: 0 auto; padding: 16px; display: grid; gap: 14px; }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+  .stat span { display: block; font-size: 13px; color: var(--muted); }
+  .stat b { font-size: 18px; font-variant-numeric: tabular-nums; }
+  .big { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .muted { color: var(--muted); font-size: 14px; }
+  .good { color: var(--good); }
+  .bad { color: var(--bad); }
+  .warn { color: var(--warn); }
+  .error { color: var(--bad); font-size: 14px; }
+  .notice { border-color: var(--accent); }
+
+  .row {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 9px 0;
+    border-top: 1px solid var(--line);
+  }
+  .row:first-of-type { border-top: 0; }
+  .row .main { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .row .main small { display: block; color: var(--muted); font-size: 13px; }
+  .row .amt { font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 600; }
+  .row .tools { display: flex; gap: 4px; }
+  .day { font-size: 13px; color: var(--muted); margin: 10px 0 0; }
+
+  .badge {
+    display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 99px;
+    border: 1px solid var(--line); color: var(--muted); margin-left: 4px; vertical-align: 1px;
+  }
+
+  .bar { height: 8px; background: var(--track); border-radius: 99px; overflow: hidden; margin: 4px 0 2px; }
+  .bar i { display: block; height: 100%; background: var(--accent); border-radius: 99px; }
+
+  .primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+  .danger { color: var(--bad); }
+  .small { padding: 4px 9px; font-size: 13px; }
+  .ghost { background: transparent; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .actions.end { margin-top: 10px; }
+
+  .tabs {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 2;
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    background: var(--card); border-top: 1px solid var(--line);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .tabs a { text-align: center; padding: 14px 4px; font-size: 14px; color: var(--muted); text-decoration: none; }
+  .tabs a.active { color: var(--accent); font-weight: 700; box-shadow: inset 0 2px 0 var(--accent); }
+
+  dialog {
+    margin: auto;
+    border: 1px solid var(--line); border-radius: 14px; padding: 18px;
+    width: min(440px, calc(100vw - 32px));
+    max-height: calc(100dvh - 32px);
+    background: var(--card); color: var(--text);
+  }
+  dialog::backdrop { background: rgba(0, 0, 0, .45); }
+  .form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+  .seg label { margin: 0; }
+  .seg input { position: absolute; opacity: 0; width: 0; }
+  .seg span { display: block; text-align: center; padding: 8px; border: 1px solid var(--line); border-radius: 8px; color: var(--text); cursor: pointer; }
+  .seg input:checked + span { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+  .seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .check { display: flex; gap: 8px; align-items: flex-start; color: var(--text); }
+  .check input { margin-top: 4px; }
+
+  .auth { max-width: 420px; padding-top: 48px; }
+  .code { font: 700 22px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 2px; }
+}

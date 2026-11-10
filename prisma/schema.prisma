@@ -1,0 +1,123 @@
+// Skema database Keuangan Berdua.
+// Nominal rupiah disimpan sebagai Int (tanpa desimal). Tanggal transaksi sebagai DATE.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Satu rumah tangga = dua orang yang berbagi catatan.
+model Household {
+  id           String        @id @default(cuid())
+  /// Kode untuk pasangan bergabung. Bisa dibuat ulang dari menu Pengaturan.
+  inviteCode   String        @unique @map("invite_code")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  members      User[]
+  debts        Debt[]
+  transactions Transaction[]
+
+  @@map("households")
+}
+
+model User {
+  id             String        @id @default(cuid())
+  name           String
+  email          String        @unique
+  passwordHash   String        @map("password_hash")
+  /// Dinaikkan saat password diganti, supaya sesi lama tidak berlaku.
+  sessionVersion Int           @default(0) @map("session_version")
+  householdId    String        @map("household_id")
+  household      Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdAt      DateTime      @default(now()) @map("created_at")
+  transactions   Transaction[]
+  debts          Debt[]
+
+  @@index([householdId])
+  @@map("users")
+}
+
+enum DebtType {
+  PAYLATER
+  PINJOL
+  LAIN
+
+  @@map("debt_type")
+}
+
+model Debt {
+  id           String           @id @default(cuid())
+  householdId  String           @map("household_id")
+  household    Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  name         String
+  type         DebtType
+  /// Atas nama siapa.
+  ownerId      String?          @map("owner_id")
+  owner        User?            @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  /// Sisa hutang saat pertama dicatat.
+  startBalance Int              @map("start_balance")
+  /// Cicilan per bulan.
+  monthly      Int              @default(0)
+  /// Tanggal jatuh tempo tiap bulan (1-31).
+  dueDay       Int?             @map("due_day")
+  /// Bunga per bulan dalam persen.
+  rate         Float?
+  createdAt    DateTime         @default(now()) @map("created_at")
+  adjustments  DebtAdjustment[]
+  transactions Transaction[]
+
+  @@index([householdId])
+  @@map("debts")
+}
+
+/// Koreksi saldo supaya sama dengan angka di aplikasi pinjaman (bunga, denda).
+model DebtAdjustment {
+  id        String   @id @default(cuid())
+  debtId    String   @map("debt_id")
+  debt      Debt     @relation(fields: [debtId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  /// Selisih: positif = hutang naik, negatif = turun.
+  amount    Int
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([debtId])
+  @@map("debt_adjustments")
+}
+
+enum TxKind {
+  /// Uang masuk.
+  INCOME
+  /// Pengeluaran tunai/transfer/e-wallet.
+  EXPENSE
+  /// Belanja pakai paylater: uang belum keluar, hutang (debtId) bertambah.
+  PAYLATER
+  /// Bayar cicilan: uang keluar, hutang (debtId) berkurang.
+  PAYMENT
+
+  @@map("tx_kind")
+}
+
+model Transaction {
+  id          String    @id @default(cuid())
+  householdId String    @map("household_id")
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  kind        TxKind
+  date        DateTime  @db.Date
+  amount      Int
+  category    String
+  /// Siapa yang mencatat / belanja / menerima.
+  userId      String?   @map("user_id")
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  note        String    @default("")
+  /// Kalau hutangnya dihapus, transaksi tetap ada dengan debtId kosong.
+  debtId      String?   @map("debt_id")
+  debt        Debt?     @relation(fields: [debtId], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([householdId, date])
+  @@index([debtId])
+  @@map("transactions")
+}
